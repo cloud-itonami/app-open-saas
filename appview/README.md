@@ -7,11 +7,14 @@
 - `/api/open-saas/demo-tenants`: デモ tenant 一覧
 - `/healthz`: ヘルスチェック
 
+ローカルでの確認手順は `../docs/operator-quickstart.md`。`wrangler dev` は
+この repo 単体では踏めない（`hono` 依存と `wrangler.jsonc` が切り出し元に残っている）。
+
 ## salesforce-crm-sfcrm9x3
 
 Salesforce 相当の OSS CRM appview (M2.5)。
 
-- Lexicons: `00-contracts/lexicons/com/etzhayyim/apps/opensaas/salesforce/` (account, contact, lead, opportunity, case, activity, createLead, convertLead, listPipeline)
+- Lexicons: `00-contracts/lexicons/com/etzhayyim/apps/opensaas/salesforce/` **（切り出し元 `etzhayyim/root` 側。この repo には無い）** (account, contact, lead, opportunity, case, activity, createLead, convertLead, listPipeline)
 - Route: `https://salesforce.opensaas.etzhayyim.com/`
 - Tenancy: `did:web:<slug>.opensaas.etzhayyim.com` per tenant, seat DID = `did:web:<slug>.opensaas.etzhayyim.com:seat:<role>-<nn>`
 - PII split (ADR-0018): emailHash / phoneHash を Tier 1 AT Record、raw PII は Tier 3 Preferences
@@ -26,8 +29,4 @@ API:
 - `POST /api/salesforce/leads/convert` — convertLead (Account+Contact+Opportunity 原子書き込み)
 - `POST /api/salesforce/opportunities/:uri/stage` — stage 遷移 (activity 自動派生)
 
-ローカル:
-
-```sh
-pnpm exec wrangler dev --config 60-apps/etzhayyim-project-open-saas/appview/salesforce-crm-sfcrm9x3/wrangler.jsonc
-```
+ローカル: `../docs/operator-quickstart.md` §2（ドメインテスト）。

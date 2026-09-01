@@ -1,0 +1,77 @@
+#!/usr/bin/env nbb
+;; run_tests.cljs — app-open-saas の検査。
+;;
+;;   nbb --classpath test run_tests.cljs
+;;
+;; ネットワークには出ない。`appview/*/src/*-domain.ts` は **本物を import する**
+;; （外部依存を持たない純 TypeScript なので Node 26 がそのまま実行できる）。
+;; `src/app.ts` は `hono` を要求するので import せず、経路の宣言をテキストとして読む。
+;;
+;; workspace の規則（superproject CLAUDE.md）で script host は nbb に一本化されて
+;; おり、新規の .sh / .mjs は禁止。よって runner は nbb + cljs.test である。
+;;
+;; ## exit は 3 値である
+;;
+;;   0  全部緑
+;;   1  検査が **落ちた**（不変条件が破れている）
+;;   2  検査が **走れなかった**（証拠を集められなかった）
+;;
+;; 2 が要るのは、「測れなかった検査」が「測って問題が無かった検査」と同じ値を
+;; 返してはならないからである（superproject CLAUDE.md）。import が転ける・
+;; git が答えない・ファイルが無い —— どれも黙って『違反 0 件』に見える。
+(ns run-tests
+  (:require [clojure.test :as t]
+            [open-saas.artifacts :as a]
+            [open-saas.contracts-test :as ct]))
+
+(def green-marker
+  "scripts/maturity-loop/mutations.edn の `:green-marker`。全部緑のときだけ出す ——
+   出力に現れるかどうかで mutation が噛んだかを判定するので、緑でないときに
+   印字してはならない。"
+  "app-open-saas contracts: all green")
+
+(defmethod t/report [:cljs.test/default :end-run-tests] [m]
+  (if (t/successful? m)
+    (println (str "\n" green-marker))
+    (do (println "\napp-open-saas contracts: FAILED")
+        (js/process.exit 1))))
+
+(defn- refuse! [e]
+  (println "\napp-open-saas contracts: REFUSED — 証拠を集められなかったので合格を報告しない")
+  (println (or (ex-message e) (.-message e)))
+  (js/process.exit 2))
+
+;; ── 証拠を集める（ここで転けたら exit 2）────────────────────────────────────
+;;
+;; テストの中で throw させると cljs.test が error として拾い、**不変条件が破れた
+;; のと同じ exit 1** になる。この 2 つは別の事実なので、集める段を分けてある。
+(-> (js/Promise.resolve)
+    (.then (fn [_]
+             ;; tree・appview・主要ファイルが読めるか。読めなければここで throw。
+             (a/tracked)
+             (let [avs (a/appview-dirs)]
+               (println (str "SCANNED\tappviews=" (count avs) "\ttracked=" (count (a/tracked))))
+               (doseq [av avs]
+                 (a/slurp* (str "appview/" av "/src/app.ts"))
+                 (a/read-json (str "appview/" av "/kotodama.jsonld"))))
+             (a/slurp* "docs/operator-quickstart.md")
+             (a/slurp* "appview/README.md")
+             (a/read-json "PROJECT.jsonld")
+             ;; 宣言側の読み取りを全部 1 度ずつ走らせる。読めないものが 1 つでも
+             ;; あれば exit 2 —— テストの中で throw させると exit 1 になり、
+             ;; 「壊れている」と区別できなくなる。
+             (ct/evidence!)
+             (js/Promise.all
+              #js [(a/import-domain "open-saas-console-os4a5s1" "open-saas-domain")
+                   (a/import-domain "salesforce-crm-sfcrm9x3" "salesforce-domain")])))
+    (.then (fn [mods]
+             (reset! ct/domains {:console (aget mods 0) :sfcrm (aget mods 1)})
+             ;; import できても中身が空なら測れていない。呼ぶ関数の存在を先に見る。
+             (doseq [[label m fname] [["console" (aget mods 0) "getBlueprint"]
+                                      ["console" (aget mods 0) "getOverview"]
+                                      ["sfcrm" (aget mods 1) "createLead"]]]
+               (when-not (fn? (aget m fname))
+                 (throw (ex-info (str label " の " fname " が関数として export されて"
+                                      "いない。この検査は何も測れていない。") {}))))
+             (t/run-tests 'open-saas.contracts-test)))
+    (.catch refuse!))

@@ -99,6 +99,33 @@ Worker として動かしたい場合の未着手項目:
 
 ここまでやって初めて `appview/README.md` の API 一覧が実際に叩ける。
 
+## 4.5 repo 横断の契約検査（依存のインストール不要）
+
+```sh
+cd ../..                                  # repo ルート
+nbb --classpath test run_tests.cljs
+```
+
+実測の末尾:
+
+```
+Ran 14 tests containing 125 assertions.
+0 failures, 0 errors.
+
+app-open-saas contracts: all green
+```
+
+vitest が各 appview のドメイン層を**単体で**見るのに対し、こちらは**文書と実装が
+互いについて言っていること**を見る —— README の API 一覧と実際に登録される経路、
+`kotodama.jsonld` の host / route prefix、この quickstart が印字している数字、
+`PROJECT.jsonld` が指す先、基板スキーマと py cleanroom の allowlist、そして
+「raw な email は拒否される」という PII split。
+
+exit は 3 値である: `0` 全部緑 / `1` 不変条件が破れている / `2` **証拠を集められな
+かった**（ファイルが無い・ドメインモジュールが import できない・README の契約見出しが
+消えた等）。2 が要るのは、測れなかった検査が測って問題が無かった検査と同じ値を
+返してはならないからである。
+
 ## 5. 後片付け
 
 ```sh

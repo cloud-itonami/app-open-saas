@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 import uuid
 import json
+import hashlib
 
 # Integration with py kotodama for kotoba datomic substrate
 try:
@@ -71,29 +72,73 @@ MOCK_DESCRIBE_SCHEMA = {
     ],
 }
 
+# ── PII split (ADR-0018) ─────────────────────────────────────────────────────
+#
+# The TypeScript AT-record path (src/salesforce-domain.ts) refuses a lead whose
+# emailHash is not "sha256:<hex>" -- "raw PII is rejected". This module writes to
+# the SAME substrate (GRAPH_ID above is this appview's own DID), so if it stored
+# the raw Email a Salesforce client sends, the repo's headline claim would hold on
+# one side only. The wire stays Salesforce-compatible (MOCK_DESCRIBE_SCHEMA still
+# advertises Email); what changes is what lands in the substrate.
+PII_HASHED_FIELDS = {"email": "email_hash", "phone": "phone_hash"}
+
+# Attributes this API may write, per kotoba namespace. This must be a subset of
+# salesforce-schema.kotoba.edn -- test/open_saas/contracts_test.cljs checks both
+# directions. Without an allowlist the mapper wrote whatever key the client sent,
+# so the schema constrained nothing about what actually reached the substrate.
+ATTR_ALLOWLIST = {
+    "account": {"id", "name", "type", "industry"},
+    "contact": {"id", "account_id", "first_name", "last_name", "email_hash"},
+    "lead": {"id", "first_name", "last_name", "company", "status"},
+    "opportunity": {"id", "account_id", "name", "stage_name", "amount", "close_date"},
+    "case": {"id", "account_id", "contact_id", "subject", "status", "priority"},
+}
+
+# CamelCase wire field -> snake_case schema attribute. "contactid" was missing
+# before the allowlist existed, so Case.ContactId silently landed as
+# :case/contactid -- an attribute the schema never declared.
+FIELD_TO_ATTR = {
+    "stagename": "stage_name",
+    "closedate": "close_date",
+    "firstname": "first_name",
+    "lastname": "last_name",
+    "accountid": "account_id",
+    "contactid": "contact_id",
+}
+
+
+def hash_channel(value):
+    """sha256:-prefixed digest of a contact channel.
+
+    A value that already carries the prefix is passed through, so a client that
+    performed the split itself is not hashed twice.
+    """
+    if isinstance(value, str) and value.startswith("sha256:"):
+        return value
+    return "sha256:" + hashlib.sha256(str(value).encode("utf-8")).hexdigest()
+
+
 def to_kotoba_entity(sobject_name: str, sobject_id: str, data: dict):
     """Maps Salesforce JSON payloads to Kotoba Datomic entities based on cleanroom schema."""
     namespace = SOBJECT_MAPPING.get(sobject_name)
     if not namespace:
         raise ValueError(f"Unknown sobject: {sobject_name}")
-    
+
+    allowed = ATTR_ALLOWLIST[namespace]
     entity = {f":{namespace}/id": sobject_id}
     for k, v in data.items():
-        # Cleanroom mapping logic from CamelCase to snake_case schema definitions
-        attr = k.lower()
-        if k.lower() == "stagename":
-            attr = "stage_name"
-        elif k.lower() == "closedate":
-            attr = "close_date"
-        elif k.lower() == "firstname":
-            attr = "first_name"
-        elif k.lower() == "lastname":
-            attr = "last_name"
-        elif k.lower() == "accountid":
-            attr = "account_id"
-        
+        key = k.lower()
+        attr = FIELD_TO_ATTR.get(key, key)
+        if attr in PII_HASHED_FIELDS:
+            attr = PII_HASHED_FIELDS[attr]
+            v = hash_channel(v)
+        if attr not in allowed:
+            raise ValueError(
+                f"{sobject_name}.{k} maps to :{namespace}/{attr}, which the cleanroom "
+                f"schema does not declare -- refusing to write an undeclared attribute"
+            )
         entity[f":{namespace}/{attr}"] = v
-        
+
     return entity
 
 @app.get("/services/data/v58.0/sobjects/{sobject_name}/{id}")
@@ -171,7 +216,7 @@ async def delete_sobject(sobject_name: str, id: str):
             raise HTTPException(status_code=404, detail="Not Found")
             
         eid = results[0][0]
-        kotoba_datomic.transact(GRAPH_ID, [[:db.fn/retractEntity, eid]])
+        kotoba_datomic.transact(GRAPH_ID, [[":db.fn/retractEntity", eid]])
         return {}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -278,7 +323,7 @@ async def composite_api(request: Request):
                                 q_str = f"[:find ?e :in $ ?id :where [?e :{namespace}/id ?id]]"
                                 q_res = kotoba_datomic.q(GRAPH_ID, q_str, [record_id])
                                 if q_res:
-                                    kotoba_datomic.transact(GRAPH_ID, [[:db.fn/retractEntity, q_res[0][0]]])
+                                    kotoba_datomic.transact(GRAPH_ID, [[":db.fn/retractEntity", q_res[0][0]]])
                                     http_status = 204
                                 else:
                                     http_status = 404

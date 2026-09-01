@@ -16,12 +16,23 @@
 | `appview/open-saas-console-os4a5s1/` | オペレータコンソール。`src/open-saas-domain.ts`（tenant / workspace / seat / subscription / usage / audit、in-memory）+ `src/app.ts`（Hono ルート）+ `static-ui/` |
 | `appview/salesforce-crm-sfcrm9x3/` | Salesforce 相当 CRM。`src/salesforce-domain.ts`（lead / convert / opportunity stage / pipeline、PII は `sha256:` ハッシュのみ受理）+ `src/app.ts` + `sales/`（営業資料 13 本） |
 | `migration.edn` / `README.edn` / `project.json` | 切り出しの出所と repository identity |
+| `test/` + `run_tests.cljs` | **文書と実装が互いについて言っていること**の検査（nbb）。各 appview の vitest がドメイン層を単体で見るのに対し、こちらは README / `kotodama.jsonld` / `PROJECT.jsonld` / quickstart / 基板スキーマ / 2 つの実装のあいだの食い違いを見る |
 
 ## いま動くもの・動かないもの（2026-08-22 実測、commit `e97d4fb`）
 
 - **動く**: 2 つの appview の**ドメイン層とそのテスト**。`npm ci && npm test`
   （vitest）で 14 + 14 件が通る。ドメインモジュールは Node ≥ 22.18 の型ストリップで
   `node -e 'import("./src/open-saas-domain.ts")…'` と直接呼べる。
+- **動く**: repo 横断の契約検査。`nbb --classpath test run_tests.cljs`（依存の
+  インストール不要）。exit は 3 値で、`0` 全部緑 / `1` 不変条件が破れている /
+  `2` **証拠を集められなかったので合格を報告しない**。
+- **動かない**: `salesforce_py_kotodama.py`（FastAPI、`kotodama.jsonld` が
+  `runtimeType: worker-py` として宣言している cleanroom Salesforce REST）。
+  2026-09-01 まで **Python として構文が通らなかった** —— EDN のキーワードが Python の
+  リストに貼られており（`[[:db.fn/retractEntity, eid]]`）、import 段階で SyntaxError に
+  なっていた。誰も走らせていないので、宣言だけが正しく見えていた。構文は直したが、
+  `fastapi` / `pydantic` / `kotodama` の依存宣言がこの repo に無いので**ここでは起動
+  できない**（検査が見ているのは「Python として読めること」までである）。
 - **動かない**: `src/app.ts`（Hono）。`hono` が `package.json` に無く
   （monorepo 時代はルートで解決していた）、`wrangler.jsonc` もこの repo には無い。
   `tsc --noEmit` は `Cannot find module 'hono'` で exit 2 になる。**`wrangler dev` の

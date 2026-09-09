@@ -20,7 +20,7 @@
 ;; —— どれも「違反 0 件」と同じ顔で出てくる。だから読めなかったら throw する。
 ;; 0 件を検査して 0 件の違反は、合格ではない。
 (ns open-saas.artifacts
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [clojure.set :as set]
             [clojure.edn :as edn]
             ["fs" :as fs]
@@ -114,7 +114,7 @@
   [appview]
   (let [rel (str "appview/" appview "/src/app.ts")]
     (when (exists? rel)
-      (into #{} (map (fn [[_ verb p]] {:verb (str/upper-case verb) :path p})
+      (into #{} (map (fn [[_ verb p]] {:verb (str/upper verb) :path p})
                      (re-seq #"app\.(get|post|put|patch|delete)\(\s*\"([^\"]+)\"" (slurp* rel)))))))
 
 (defn- py-routes
@@ -133,7 +133,7 @@
                     (tracked))]
     (into #{} (mapcat (fn [rel]
                         (map (fn [[_ verb p]]
-                               {:verb (str/upper-case verb)
+                               {:verb (str/upper verb)
                                 :path (str/replace p #"\{([^}]+)\}" ":$1")})
                              (re-seq #"@app\.(get|post|put|patch|delete)\(\s*\"([^\"]+)\"" (slurp* rel))))
                       pys))))

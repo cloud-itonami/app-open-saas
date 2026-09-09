@@ -34,7 +34,7 @@
 (ns open-saas.contracts-test
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.set :as set]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [open-saas.artifacts :as a]
             ["child_process" :as cp]))
 

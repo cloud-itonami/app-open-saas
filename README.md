@@ -23,7 +23,7 @@
 - **動く**: 2 つの appview の**ドメイン層とそのテスト**。`npm ci && npm test`
   （vitest）で 14 + 14 件が通る。ドメインモジュールは Node ≥ 22.18 の型ストリップで
   `node -e 'import("./src/open-saas-domain.ts")…'` と直接呼べる。
-- **動く**: repo 横断の契約検査。`nbb --classpath test run_tests.cljk`（依存の
+- **動く**: repo 横断の契約検査。`kbb --backend sci --classpath test run_tests.cljk`（依存の
   インストール不要）。exit は 3 値で、`0` 全部緑 / `1` 不変条件が破れている /
   `2` **証拠を集められなかったので合格を報告しない**。
 - **動かない**: `salesforce_py_kotodama.py`（FastAPI、`kotodama.jsonld` が

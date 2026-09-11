@@ -1,7 +1,7 @@
 #!/usr/bin/env nbb
-;; run_tests.cljs — app-open-saas の検査。
+;; run_tests.cljk — app-open-saas の検査。
 ;;
-;;   nbb --classpath test run_tests.cljs
+;;   nbb --classpath test run_tests.cljk
 ;;
 ;; ネットワークには出ない。`appview/*/src/*-domain.ts` は **本物を import する**
 ;; （外部依存を持たない純 TypeScript なので Node 26 がそのまま実行できる）。

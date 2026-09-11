@@ -55,7 +55,7 @@ wire は Salesforce 互換のまま（クライアントは `Email` を送って
 
 `kotodama.jsonld` の `triggers.http.routes` は、この repo に実装が無い prefix も
 宣言している。**宣言だけがあって応答するものが無い**ので、ここに明記する ——
-`test/open_saas/contracts_test.cljs` がこの一覧と manifest を両方向に突き合わせる
+`test/open_saas/contracts_test.cljk` がこの一覧と manifest を両方向に突き合わせる
 （実装が無いのに載っていなければ赤、実装されたのに載ったままでも赤）。
 
 - `/at/...` — AT/W Protocol の XRPC 面（createLead / convertLead / listPipeline）。

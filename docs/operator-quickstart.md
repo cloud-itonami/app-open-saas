@@ -103,7 +103,7 @@ Worker として動かしたい場合の未着手項目:
 
 ```sh
 cd ../..                                  # repo ルート
-nbb --classpath test run_tests.cljs
+nbb --classpath test run_tests.cljk
 ```
 
 実測の末尾:

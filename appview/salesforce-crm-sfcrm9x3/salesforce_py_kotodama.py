@@ -83,7 +83,7 @@ MOCK_DESCRIBE_SCHEMA = {
 PII_HASHED_FIELDS = {"email": "email_hash", "phone": "phone_hash"}
 
 # Attributes this API may write, per kotoba namespace. This must be a subset of
-# salesforce-schema.kotoba.edn -- test/open_saas/contracts_test.cljs checks both
+# salesforce-schema.kotoba.edn -- test/open_saas/contracts_test.cljk checks both
 # directions. Without an allowlist the mapper wrote whatever key the client sent,
 # so the schema constrained nothing about what actually reached the substrate.
 ATTR_ALLOWLIST = {

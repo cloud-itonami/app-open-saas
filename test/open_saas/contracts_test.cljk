@@ -32,7 +32,7 @@
 ;; 置くと、写しの方だけが正しいまま実物が腐る。読み損ねたら床で throw する
 ;; （open-saas.artifacts を参照）—— 空集合との比較は常に真であって、合格ではない。
 (ns open-saas.contracts-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [clojure.set :as set]
             [kotoba.lang.text :as str]
             [open-saas.artifacts :as a]

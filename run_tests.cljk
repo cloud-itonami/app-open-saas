@@ -20,7 +20,7 @@
 ;; 返してはならないからである（superproject CLAUDE.md）。import が転ける・
 ;; git が答えない・ファイルが無い —— どれも黙って『違反 0 件』に見える。
 (ns run-tests
-  (:require [clojure.test :as t]
+  (:require [kotoba.test :as t]
             [open-saas.artifacts :as a]
             [open-saas.contracts-test :as ct]))
 

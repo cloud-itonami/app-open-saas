@@ -22,7 +22,7 @@
 (ns open-saas.artifacts
   (:require [kotoba.lang.text :as str]
             [clojure.set :as set]
-            [clojure.edn :as edn]
+            [kotoba.lang.edn :as edn]
             ["fs" :as fs]
             ["path" :as path]
             ["child_process" :as cp]))

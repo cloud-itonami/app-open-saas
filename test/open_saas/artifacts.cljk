@@ -21,7 +21,7 @@
 ;; 0 件を検査して 0 件の違反は、合格ではない。
 (ns open-saas.artifacts
   (:require [kotoba.lang.text :as str]
-            [clojure.set :as set]
+            [kotoba.lang.coll :as set]
             [kotoba.lang.edn :as edn]
             ["fs" :as fs]
             ["path" :as path]

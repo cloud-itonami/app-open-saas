@@ -13,7 +13,7 @@
 ;; 検査したいのは実物なので、実物を読む。docs/operator-quickstart.md が印字して
 ;; いる数字も、README が数えている件数も、**それが書かれているファイルから読む**。
 ;;
-;; ## 「測れなかった」を「問題なし」と区別する（superproject CLAUDE.md）
+;; ## 「測れなかった」を「問題なし」と区別する（superproject AGENTS.md）
 ;;
 ;; この形の検査の既定の失敗は、**読み損ねたときに空集合になり、空集合との比較が
 ;; 常に真になる**ことである。ファイルが無い・正規表現が噛まない・import が転ける
@@ -75,7 +75,7 @@
 (defn read-edn-all
   "EDN を **最後まで** 消費して読む。`read-string` は最初の form だけ読んで残りを
    捨てるので、早く閉じた map の後ろにゴミが続くファイルが clean として通る
-   （superproject CLAUDE.md が heredoc の `\\\"` について記録しているのと同じ形）。"
+   （superproject AGENTS.md が heredoc の `\\\"` について記録しているのと同じ形）。"
   [rel]
   (let [text (slurp* rel)
         forms (edn/read-string (str "[" text "]"))]

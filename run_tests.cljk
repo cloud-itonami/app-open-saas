@@ -7,7 +7,7 @@
 ;; （外部依存を持たない純 TypeScript なので Node 26 がそのまま実行できる）。
 ;; `src/app.ts` は `hono` を要求するので import せず、経路の宣言をテキストとして読む。
 ;;
-;; workspace の規則（superproject CLAUDE.md）で script host は nbb に一本化されて
+;; workspace の規則（superproject AGENTS.md）で script host は nbb に一本化されて
 ;; おり、新規の .sh / .mjs は禁止。よって runner は nbb + cljs.test である。
 ;;
 ;; ## exit は 3 値である
@@ -17,7 +17,7 @@
 ;;   2  検査が **走れなかった**（証拠を集められなかった）
 ;;
 ;; 2 が要るのは、「測れなかった検査」が「測って問題が無かった検査」と同じ値を
-;; 返してはならないからである（superproject CLAUDE.md）。import が転ける・
+;; 返してはならないからである（superproject AGENTS.md）。import が転ける・
 ;; git が答えない・ファイルが無い —— どれも黙って『違反 0 件』に見える。
 (ns run-tests
   (:require [kotoba.test :as t]
